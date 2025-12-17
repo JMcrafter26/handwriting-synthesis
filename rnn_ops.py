@@ -8,7 +8,7 @@ from tensorflow.python.ops import math_ops
 from tensorflow.python.ops import tensor_array_ops
 from tensorflow.python.ops import variable_scope as vs
 from tensorflow.python.ops.rnn import _maybe_tensor_shape_from_tensor
-from tensorflow.python.ops.rnn_cell_impl import _concat, _like_rnncell
+from tensorflow.python.ops.rnn_cell_impl import _concat
 from tensorflow.python.util import is_in_graph_mode
 from tensorflow.python.util import nest
 
@@ -26,8 +26,6 @@ def raw_rnn(cell, loop_fn, parallel_iterations=None, swap_memory=False, scope=No
         final cell state,
     )
     """
-    if not _like_rnncell(cell):
-        raise TypeError("cell must be an instance of RNNCell")
     if not callable(loop_fn):
         raise TypeError("loop_fn must be a callable")
 

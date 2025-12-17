@@ -1,8 +1,13 @@
-![](img/banner.svg)
 # Handwriting Synthesis
-Implementation of the handwriting synthesis experiments in the paper <a href="https://arxiv.org/abs/1308.0850">Generating Sequences with Recurrent Neural Networks</a> by Alex Graves.  The implementation closely follows the original paper, with a few slight deviations, and the generated samples are of similar quality to those presented in the paper.
+
+![Banner](img/banner.svg)
+
+Implementation of the handwriting synthesis experiments in the paper [Generating Sequences with Recurrent Neural Networks](https://arxiv.org/abs/1308.0850) by Alex Graves.  The implementation closely follows the original paper, with a few slight deviations, and the generated samples are of similar quality to those presented in the paper.
 
 ## Usage
+
+I included `demo.py` to get you started quickly.  Here's a simple example of how to use the `Hand` class to generate handwriting samples:
+
 ```python
 lines = [
     "Now this is a story all about how",
@@ -25,44 +30,70 @@ hand.write(
     stroke_widths=stroke_widths
 )
 ```
-![](img/usage_demo.svg)
+
+![Demo](img/usage_demo.svg)
 
 Currently, the `Hand` class must be imported from `ct83_demo.py`.  If someone would like to package this project to make it more usable, please [contribute](#contribute).
 
-A pretrained model is included, but if you'd like to train your own, read <a href='https://github.com/sjvasquez/handwriting-synthesis/tree/master/data/raw'>these instructions</a>.
+A pretrained model is included, but if you'd like to train your own, read [these instructions](https://github.com/sjvasquez/handwriting-synthesis/tree/master/data/raw).
+
+## Installation
+
+1. Clone this repository
+2. Create a virtual environment with [uv](https://docs.astral.sh/uv/) (highly recommended)
+
+    ```cli
+    uv venv --python 3.7
+    ```
+
+    Make sure to activate the virtual environment!
+
+3. Install the requirements
+
+    ```cli
+    uv pip install -r requirements.txt
+    ```
+
+I created `demo.py` to get you started quickly.
 
 ## Demonstrations
+
 Below are a few hundred samples from the model, including some samples demonstrating the effect of priming and biasing the model.  Loosely speaking, biasing controls the neatness of the samples and priming controls the style of the samples. The code for these demonstrations can be found in `ct83_demo.py`.
 
 ### CT83 Fork Demo
+
 The following samples were generated using the forked project which was built on top of the author's original works. It included some code refactory, better customization options and ability to input complete paragraphs and move words which don't fit on the same line to the next line.
 
-**All the credit for training of RNN and building of the model and everything else except some changes for better usabiliy should be given to  <a href="https://github.com/sjvasquez">sjvasquez</a>**.
+> This is a fork of CT83's fork. I fixed requirements issues and made it work with Python 3.7
 
-![](img/usage_demo_2.svg)
+**All the credit for training of RNN and building of the model and everything else except some changes for better usabiliy should be given to  [sjvasquez](https://github.com/sjvasquez)**.
 
+![Demo](img/usage_demo_2.svg)
 
+### Demo #1
 
-### Demo #1:
 The following samples were generated with a fixed style and fixed bias.
 
-**Smash Mouth – All Star (<a href="https://www.azlyrics.com/lyrics/smashmouth/allstar.html">lyrics</a>)**
-![](img/all_star.svg)
+**Smash Mouth – All Star ([lyrics](https://www.azlyrics.com/lyrics/smashmouth/allstar.html))**
+![All Star](img/all_star.svg)
 
 ### Demo #2
+
 The following samples were generated with varying style and fixed bias.  Each verse is generated in a different style.
 
-**Vanessa Carlton – A Thousand Miles (<a href="https://www.azlyrics.com/lyrics/vanessacarlton/athousandmiles.html">lyrics</a>)**
-![](img/downtown.svg)
+**Vanessa Carlton – A Thousand Miles ([lyrics](https://www.azlyrics.com/lyrics/vanessacarlton/athousandmiles.html))**
+![A Thousand Miles](img/downtown.svg)
 
 ### Demo #3
+
 The following samples were generated with a fixed style and varying bias.  Each verse has a lower bias than the previous, with the last verse being unbiased.
 
-**Leonard Cohen – Hallelujah (<a href="https://www.youtube.com/watch?v=dQw4w9WgXcQ">lyrics</a>)**
-![](img/give_up.svg)
+**Leonard Cohen – Hallelujah ([lyrics](https://www.youtube.com/watch?v=dQw4w9WgXcQ))**
+![Hallelujah](img/give_up.svg)
 
 ## Contribute
+
 This project was intended to serve as a reference implementation for a research paper, but since the results are of decent quality, it may be worthwile to make the project more broadly usable.  I plan to continue focusing on the machine learning side of things.  That said, I'd welcome contributors who can:
 
-  - Package this, and otherwise make it look more like a usable software project and less like research code.
-  - Add support for more sophisticated drawing, animations, or anything else in this direction.  Currently, the project only creates some simple svg files.
+- Package this, and otherwise make it look more like a usable software project and less like research code.
+- Add support for more sophisticated drawing, animations, or anything else in this direction.  Currently, the project only creates some simple svg files.
