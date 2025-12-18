@@ -39,7 +39,59 @@ class Hand(object):
         self.nn.restore()
 
     def write(self, filename, lines, biases=None, styles=None, stroke_colors=None,
-              stroke_widths=None, line_height=60, view_width=1000, align_center=True):
+              stroke_widths=None, line_height=60, view_width=1000, align_center=True, add_ruled_lines=False, scale=1.0, margin_left=20):
+        valid_char_set = set(drawing.alphabet)
+        for line_num, line in enumerate(lines):
+            if len(line) > 75:
+                raise ValueError(
+                    (
+                        "Each line must be at most 75 characters. "
+                        "Line {} contains {}"
+                    ).format(line_num, len(line))
+                )
+import logging
+import os
+import time
+
+import numpy as np
+import svgwrite
+
+import drawing
+from rnn import rnn
+
+
+class Hand(object):
+
+    def __init__(self):
+        os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2'
+        self.nn = rnn(
+            log_dir='logs',
+            checkpoint_dir='checkpoints',
+            prediction_dir='predictions',
+            learning_rates=[.0001, .00005, .00002],
+            batch_sizes=[32, 64, 64],
+            patiences=[1500, 1000, 500],
+            beta1_decays=[.9, .9, .9],
+            validation_batch_size=32,
+            optimizer='rms',
+            num_training_steps=100000,
+            warm_start_init_step=17900,
+            regularization_constant=0.0,
+            keep_prob=1.0,
+            enable_parameter_averaging=False,
+            min_steps_to_checkpoint=2000,
+            log_interval=20,
+            logging_level=logging.CRITICAL,
+            grad_clip=10,
+            lstm_size=400,
+            output_mixture_components=20,
+            attention_mixture_components=10
+        )
+        self.nn.restore()
+
+    def write(self, filename, lines, biases=None, styles=None, stroke_colors=None,
+              stroke_widths=None, line_height=60, view_width=1000, align_center=True, font_scale=1.0,
+              top_margin=None, left_margin=0, per_line_font_scales=None, per_line_centers=None):
         valid_char_set = set(drawing.alphabet)
         for line_num, line in enumerate(lines):
             if len(line) > 75:
@@ -64,7 +116,9 @@ class Hand(object):
         start_time_2 = time.time()
         self._draw(strokes, lines, filename, stroke_colors=stroke_colors,
                    stroke_widths=stroke_widths, line_height=line_height,
-                   view_width=view_width, align_center=align_center)
+                   view_width=view_width, align_center=align_center, font_scale=font_scale,
+                   top_margin=top_margin, left_margin=left_margin,
+                   per_line_font_scales=per_line_font_scales, per_line_centers=per_line_centers)
         print("Time Taken for draw: ", (time.time() - start_time_2) / 60, " Minutes")
 
     def _sample(self, lines, biases=None, styles=None):
@@ -114,7 +168,8 @@ class Hand(object):
         return samples
 
     def _draw(self, strokes, lines, filename, stroke_colors=None, stroke_widths=None,
-              line_height=60, view_width=1000, align_center=True):
+              line_height=60, view_width=1000, align_center=True, font_scale=1.0,
+              top_margin=None, left_margin=0, per_line_font_scales=None, per_line_centers=None):
         stroke_colors = stroke_colors or ['black'] * len(lines)
         stroke_widths = stroke_widths or [2] * len(lines)
 
@@ -124,27 +179,36 @@ class Hand(object):
         dwg.viewbox(width=view_width, height=view_height)
         dwg.add(dwg.rect(insert=(0, 0), size=(view_width, view_height), fill='white'))
 
-        initial_coord = np.array([0, -(3 * line_height / 4)])
-        for offsets, line, color, width in zip(strokes, lines, stroke_colors, stroke_widths):
+        # Use custom top_margin if provided, otherwise use default offset
+        if top_margin is not None:
+            initial_coord = np.array([left_margin, -top_margin])
+        else:
+            initial_coord = np.array([left_margin, -(3 * line_height / 4)])
+        
+        for line_idx, (offsets, line, color, width) in enumerate(zip(strokes, lines, stroke_colors, stroke_widths)):
 
             if not line:
                 initial_coord[1] -= line_height
                 continue
 
-            offsets[:, :2] *= 1.5
-            strokes = drawing.offsets_to_coords(offsets)
-            strokes = drawing.denoise(strokes)
-            strokes[:, :2] = drawing.align(strokes[:, :2])
+            # Use per-line font scale if provided, otherwise use global font_scale
+            current_font_scale = per_line_font_scales[line_idx] if per_line_font_scales else font_scale
+            offsets[:, :2] *= 1.5 * current_font_scale
+            strokes_arr = drawing.offsets_to_coords(offsets)
+            strokes_arr = drawing.denoise(strokes_arr)
+            strokes_arr[:, :2] = drawing.align(strokes_arr[:, :2])
 
-            strokes[:, 1] *= -1
-            strokes[:, :2] -= strokes[:, :2].min() + initial_coord
+            strokes_arr[:, 1] *= -1
+            strokes_arr[:, :2] -= strokes_arr[:, :2].min() + initial_coord
 
-            if align_center:
-                strokes[:, 0] += (view_width - strokes[:, 0].max()) / 2
+            # Use per-line centering if provided, otherwise use global align_center
+            current_center = per_line_centers[line_idx] if per_line_centers else align_center
+            if current_center:
+                strokes_arr[:, 0] += (view_width - strokes_arr[:, 0].max()) / 2
 
             prev_eos = 1.0
             p = "M{},{} ".format(0, 0)
-            for x, y, eos in zip(*strokes.T):
+            for x, y, eos in zip(*strokes_arr.T):
                 p += '{}{},{} '.format('M' if prev_eos == 1.0 else 'L', x, y)
                 prev_eos = eos
             path = svgwrite.path.Path(p)
